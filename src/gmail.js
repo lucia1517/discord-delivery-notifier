@@ -13,15 +13,10 @@
 
 import { google } from "googleapis";
 
+import { authorize } from "./auth.js";
 
 let gmail = null;
 
-
-/**
- * Gmail API Client
- *
- * @returns {Promise<import("googleapis").gmail_v1.Gmail>}
- */
 export async function getGmailClient() {
 
     if (gmail) {
@@ -30,15 +25,7 @@ export async function getGmailClient() {
 
     }
 
-    const auth = new google.auth.GoogleAuth({
-
-        scopes: [
-
-            "https://www.googleapis.com/auth/gmail.readonly"
-
-        ]
-
-    });
+    const auth = await authorize();
 
     gmail = google.gmail({
 
@@ -52,12 +39,6 @@ export async function getGmailClient() {
 
 }
 
-/**
- * メール一覧取得
- *
- * @param {number} maxResults
- * @returns {Promise<object[]>}
- */
 export async function listMessages(maxResults = 10) {
 
     const gmail = await getGmailClient();

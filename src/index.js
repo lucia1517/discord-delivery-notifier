@@ -8,10 +8,15 @@
 "use strict";
 
 import express from "express";
-
 import { CONFIG } from "./config.js";
-
 import * as logger from "./utils/logger.js";
+import {
+
+    getGmailClient,
+
+    listMessages
+
+} from "./gmail.js";
 
 const app = express();
 
@@ -47,7 +52,6 @@ app.listen(
 
 
 
-
 import { sendDiscordNotification } from "./notifications/discord.js";
 
 app.get("/test", async (req, res) => {
@@ -72,12 +76,37 @@ app.get("/test", async (req, res) => {
 
 });
 
-import { 
-    
-    getGmailClient,
-    listMessages
+app.get("/gmail/messages", async (req, res) => {
 
- } from "./gmail.js";
+    try {
+
+        const messages = await listMessages(10);
+
+        res.json({
+
+            success: true,
+
+            count: messages.length,
+
+            messages
+
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+
+            success: false,
+
+            error: error.message
+
+        });
+
+    }
+
+});
 
 app.get("/gmail", async (req, res) => {
 
@@ -128,3 +157,4 @@ app.get("/gmail/messages", async (req, res) => {
     }
 
 });
+
