@@ -14,7 +14,9 @@ import {
 
     getGmailClient,
 
-    listMessages
+    listMessages,
+
+    getMessage
 
 } from "./gmail.js";
 
@@ -158,3 +160,30 @@ app.get("/gmail/messages", async (req, res) => {
 
 });
 
+app.get("/gmail/message/:id", async (req, res) => {
+
+    try {
+
+        const message = await getMessage(
+
+            req.params.id
+
+        );
+
+        res.json(message);
+
+    } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+
+            success: false,
+
+            error: error.message
+
+        });
+
+    }
+
+});

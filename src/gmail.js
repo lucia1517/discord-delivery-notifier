@@ -54,3 +54,27 @@ export async function listMessages(maxResults = 10) {
     return response.data.messages ?? [];
 
 }
+
+/**
+ * メール取得
+ *
+ * @param {string} id
+ * @returns {Promise<object>}
+ */
+export async function getMessage(id) {
+
+    const gmail = await getGmailClient();
+
+    const response = await gmail.users.messages.get({
+
+        userId: "me",
+
+        id,
+
+        format: "full"
+
+    });
+
+    return response.data;
+
+}
