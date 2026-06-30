@@ -12,11 +12,13 @@ import { CONFIG } from "./config.js";
 import * as logger from "./utils/logger.js";
 import {
 
-    getGmailClient,
-
     listMessages,
+    
+    getMessage,
 
-    getMessage
+    getHeader,
+
+    getBody
 
 } from "./gmail.js";
 
@@ -170,7 +172,21 @@ app.get("/gmail/message/:id", async (req, res) => {
 
         );
 
-        res.json(message);
+       res.json({
+
+            id: message.id,
+
+            threadId: message.threadId,
+
+            subject: getHeader(message, "Subject"),
+
+            from: getHeader(message, "From"),
+
+            date: getHeader(message, "Date"),
+
+            body: getBody(message)
+
+        });
 
     } catch (error) {
 

@@ -78,3 +78,105 @@ export async function getMessage(id) {
     return response.data;
 
 }
+
+/**
+ * ヘッダー取得
+ *
+ * @param {object} message
+ * @param {string} name
+ * @returns {string}
+ */
+export function getHeader(message, name) {
+
+    const headers = message.payload?.headers ?? [];
+
+    const header = headers.find(
+
+        (header) => header.name === name
+
+    );
+
+    return header?.value ?? "";
+
+}
+
+/**
+ * 本文取得
+ *
+ * @param {object} message
+ * @returns {string}
+ */
+export function getBody(message) {
+
+    function decode(data) {
+
+        if (!data) {
+
+            return "";
+
+        }
+
+        return Buffer
+
+            .from(
+
+                data.replace(/-/g, "+")
+
+                    .replace(/_/g, "/"),
+
+                "base64"
+
+            )
+
+            .toString("utf8");
+
+    }
+
+    if (message.payload?.body?.data) {
+
+        return decode(
+
+             message.payload.body.data
+
+        )
+
+        .replace(/\\r\\n/g, "\n")
+        .replace(/\\n/g, "\n")
+        .replace(/\r\n/g, "\n")
+        .replace(/\r/g, "\n")
+        .trim();
+
+
+    }
+
+    for (const part of message.payload?.parts ?? []) {
+
+        if (
+
+            part.mimeType === "text/plain"
+
+            &&
+
+            part.body?.data
+
+        ) {
+
+            return decode(
+
+                part.body.data
+
+            )
+
+            .replace(/\\r\\n/g, "\n")
+            .replace(/\\n/g, "\n")
+            .replace(/\r\n/g, "\n")
+            .replace(/\r/g, "\n")
+            .trim();
+
+        }
+
+    }
+
+    return "";
+
+}
