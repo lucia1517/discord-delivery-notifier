@@ -3,11 +3,31 @@
  * Discord Delivery Notifier
  * amazon.js
  * =====================================================
- * Amazonメール解析
+ * Amazon Mail Parser
  * =====================================================
  */
 
 "use strict";
+
+import {
+
+    DELIVERY_KEYWORDS,
+
+    IGNORE_KEYWORDS
+
+} from "./amazon-rules.js";
+
+import {
+
+    saveOrder,
+
+    getOrder,
+
+    deleteOrder,
+
+    cleanupOrders
+
+} from "../cache/orders.js";
 
 /**
  * Amazonメール判定
@@ -17,17 +37,97 @@
  */
 export function isAmazon(message) {
 
-    const from = message.from.toLowerCase();
+    return message.from
+        .toLowerCase()
+        .includes("amazon.co.jp");
 
-    return (
+}
 
-        from.includes("amazon.co.jp")
+/**
+ * 無視するメールか判定
+ *
+ * @param {string} subject
+ * @returns {boolean}
+ */
+function isIgnoredMail(subject) {
+
+    return IGNORE_KEYWORDS.some(
+
+        keyword => subject.includes(keyword)
+
+    );
+
+}
+
+/**
+ * 配送通知メールか判定
+ *
+ * @param {string} subject
+ * @returns {boolean}
+ */
+function isDeliveryMail(subject) {
+
+    return DELIVERY_KEYWORDS.some(
+
+        keyword => subject.includes(keyword)
+
+    );
+
+}
+
+/**
+ * イベント判定
+ *
+ * @param {string} subject
+ * @returns {string}
+ */
+function getEvent(subject) {
+
+    if (subject.includes("発送")) {
+
+        return "shipped";
+
+    }
+
+    if (
+
+        subject.includes("配達")
 
         ||
 
-        from.includes("amazon.co")
+        subject.includes("お届け")
 
-    );
+    ) {
+
+        return "delivered";
+
+    }
+
+    if (
+
+        subject.includes("注文")
+
+        ||
+
+        subject.includes("更新")
+
+    ) {
+
+        return "order_updated";
+
+    }
+
+    if (
+
+        subject.includes("キャンセル")
+
+    ) {
+
+        return "cancelled";
+
+    }
+
+    return "unknown";
 
 }
 
@@ -45,44 +145,41 @@ export function parseAmazon(message) {
 
     }
 
-    const subject = message.subject;
+    cleanupOrders();
 
-    let type = "unknown";
+    if (isIgnoredMail(message.subject)) {
 
-    if (subject.includes("発送")) {
-
-        type = "shipped";
+        return null;
 
     }
 
-    else if (
+    if (!isDeliveryMail(message.subject)) {
 
-        subject.includes("配達")
-
-        ||
-
-        subject.includes("お届け")
-
-    ) {
-
-        type = "delivered";
+        return null;
 
     }
+
+    const event = getEvent(
+
+        message.subject
+
+    );
 
     return {
 
-        shop: "amazon",
+        provider: "amazon",
 
-        type,
+        event,
 
-        subject,
+        subject: message.subject,
 
         from: message.from,
 
         date: message.date,
 
-        body: message.body
+        raw: message
 
     };
 
 }
+
