@@ -132,6 +132,24 @@ function getEvent(subject) {
 }
 
 /**
+ * 注文番号取得
+ *
+ * @param {string} body
+ * @returns {string|null}
+ */
+function getOrderId(body) {
+
+    const match = body.match(
+
+        /\d{3}-\d{7}-\d{7}/
+
+    );
+
+    return match?.[0] ?? null;
+
+}
+
+/**
  * Amazonメール解析
  *
  * @param {object} message
@@ -165,11 +183,19 @@ export function parseAmazon(message) {
 
     );
 
+    const orderId = getOrderId(
+
+        message.body
+
+    );
+
     return {
 
         provider: "amazon",
 
         event,
+
+        orderId,
 
         subject: message.subject,
 
