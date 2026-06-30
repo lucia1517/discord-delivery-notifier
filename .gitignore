@@ -3,7 +3,7 @@ node_modules/
 
 # Environment
 .env
-client_secret.json
+credentials.json
 token.json
 
 # Logs
