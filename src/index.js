@@ -44,3 +44,23 @@ app.listen(
     }
 
 );
+
+import { sendDiscordNotification } from "./notifications/discord.js";
+
+app.get("/test", async (req, res) => {
+
+    await sendDiscordNotification(
+
+        "🚚 テスト通知",
+
+        "Discord Delivery Notifier が正常に動作しています。"
+
+    );
+
+    res.json({
+
+        success: true
+
+    });
+
+});
