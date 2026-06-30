@@ -3,6 +3,8 @@ node_modules/
 
 # Environment
 .env
+client_secret.json
+token.json
 
 # Logs
 npm-debug.log*

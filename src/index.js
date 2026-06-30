@@ -45,22 +45,86 @@ app.listen(
 
 );
 
+
+
+
 import { sendDiscordNotification } from "./notifications/discord.js";
 
 app.get("/test", async (req, res) => {
 
-    await sendDiscordNotification(
+    const notification = {
 
-        "🚚 テスト通知",
+        title: "🚚 テスト通知",
 
-        "Discord Delivery Notifier が正常に動作しています。"
+        message: "Discord Delivery Notifier が正常に動作しています。"
 
-    );
+    };
+
+    await sendDiscordNotification(notification);
 
     res.json({
 
-        success: true
+        success: true,
+
+        notification
 
     });
+
+});
+
+import { 
+    
+    getGmailClient,
+    listMessages
+
+ } from "./gmail.js";
+
+app.get("/gmail", async (req, res) => {
+
+    try {
+
+        await getGmailClient();
+
+        res.json({
+
+            success: true,
+
+            message: "Gmail client initialized."
+
+        });
+
+    } catch (error) {
+
+        res.status(500).json({
+
+            success: false,
+
+            error: error.message
+
+        });
+
+    }
+
+});
+
+app.get("/gmail/messages", async (req, res) => {
+
+    try {
+
+        const messages = await listMessages();
+
+        res.json(messages);
+
+    } catch (error) {
+
+        res.status(500).json({
+
+            success: false,
+
+            error: error.message
+
+        });
+
+    }
 
 });
