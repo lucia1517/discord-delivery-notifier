@@ -10,6 +10,8 @@
 import express from "express";
 import { CONFIG } from "./config.js";
 import * as logger from "./utils/logger.js";
+import { sendDiscordNotification } from "./notifications/discord.js";
+
 import {
 
     listMessages,
@@ -18,9 +20,18 @@ import {
 
     getHeader,
 
-    getBody
+    getBody,
+
+    getGmailClient
 
 } from "./gmail.js";
+
+import {
+
+    parseAmazon
+
+} from "./parser/amazon.js";
+
 
 const app = express();
 
@@ -55,8 +66,6 @@ app.listen(
 );
 
 
-
-import { sendDiscordNotification } from "./notifications/discord.js";
 
 app.get("/test", async (req, res) => {
 
@@ -140,28 +149,6 @@ app.get("/gmail", async (req, res) => {
 
 });
 
-app.get("/gmail/messages", async (req, res) => {
-
-    try {
-
-        const messages = await listMessages();
-
-        res.json(messages);
-
-    } catch (error) {
-
-        res.status(500).json({
-
-            success: false,
-
-            error: error.message
-
-        });
-
-    }
-
-});
-
 app.get("/gmail/message/:id", async (req, res) => {
 
     try {
@@ -189,6 +176,80 @@ app.get("/gmail/message/:id", async (req, res) => {
         });
 
     } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+
+            success: false,
+
+            error: error.message
+
+        });
+
+    }
+
+});
+
+app.get("/parser/amazon/:id", async (req, res) => {
+
+    try {
+
+        const gmailMessage = await getMessage(
+
+            req.params.id
+
+        );
+
+        const message = {
+
+            id: gmailMessage.id,
+
+            threadId: gmailMessage.threadId,
+
+            subject: getHeader(
+
+                gmailMessage,
+
+                "Subject"
+
+            ),
+
+            from: getHeader(
+
+                gmailMessage,
+
+                "From"
+
+            ),
+
+            date: getHeader(
+
+                gmailMessage,
+
+                "Date"
+
+            ),
+
+            body: getBody(
+
+                gmailMessage
+
+            )
+
+        };
+
+        const parsed = parseAmazon(
+
+            message
+
+        );
+
+        res.json(parsed);
+
+    }
+
+    catch (error) {
 
         console.error(error);
 
