@@ -31,9 +31,6 @@ import {
 
 /**
  * Amazonメール判定
- *
- * @param {object} message
- * @returns {boolean}
  */
 export function isAmazon(message) {
 
@@ -44,10 +41,7 @@ export function isAmazon(message) {
 }
 
 /**
- * 無視するメールか判定
- *
- * @param {string} subject
- * @returns {boolean}
+ * 無視メール判定
  */
 function isIgnoredMail(subject) {
 
@@ -60,10 +54,7 @@ function isIgnoredMail(subject) {
 }
 
 /**
- * 配送通知メールか判定
- *
- * @param {string} subject
- * @returns {boolean}
+ * 配送通知判定
  */
 function isDeliveryMail(subject) {
 
@@ -77,9 +68,6 @@ function isDeliveryMail(subject) {
 
 /**
  * イベント判定
- *
- * @param {string} subject
- * @returns {string}
  */
 function getEvent(subject) {
 
@@ -117,11 +105,7 @@ function getEvent(subject) {
 
     }
 
-    if (
-
-        subject.includes("キャンセル")
-
-    ) {
+    if (subject.includes("キャンセル")) {
 
         return "cancelled";
 
@@ -133,9 +117,6 @@ function getEvent(subject) {
 
 /**
  * 注文番号取得
- *
- * @param {string} body
- * @returns {string|null}
  */
 function getOrderId(body) {
 
@@ -150,10 +131,74 @@ function getOrderId(body) {
 }
 
 /**
- * Amazonメール解析
+ * 配送予定日取得
+ */
+function getEstimatedDate(body) {
+
+    const match = body.match(
+
+        /\d{4}年\d{1,2}月\d{1,2}日/
+
+    );
+
+    return match?.[0] ?? null;
+
+}
+
+/**
+ * 商品一覧取得
  *
- * @param {object} message
- * @returns {object|null}
+ * @param {string} body
+ * @returns {Array}
+ */
+function getItems(body) {
+
+    const items = [];
+
+    const lines = body.split("\n");
+
+    for (const line of lines) {
+
+        const text = line.trim();
+
+        if (
+
+            text.startsWith("* ")
+
+        ) {
+
+            items.push({
+
+                name: text.substring(2)
+
+            });
+
+        }
+
+    }
+
+    return items;
+
+}
+
+/**
+ * 追跡URL取得
+ **/
+
+function getTrackingUrl(body) {
+
+    const match = body.match(
+
+        /https:\/\/www\.amazon\.co\.jp\/progress-tracker\/\S+/
+
+    );
+
+    return match?.[0] ?? null;
+
+}
+
+/**
+ * Amazonメール解析
  */
 export function parseAmazon(message) {
 
@@ -189,6 +234,68 @@ export function parseAmazon(message) {
 
     );
 
+    const estimatedDate = getEstimatedDate(
+
+        message.body
+
+    );
+
+    const items = getItems(
+
+        message.body
+
+    );
+
+    const trackingUrl = getTrackingUrl(
+
+        message.body
+
+    );
+
+    if (
+
+        event === "shipped"
+
+        &&
+
+        orderId
+
+    ) {
+
+        saveOrder({
+
+            provider: "amazon",
+
+            orderId,
+
+            items,
+
+            estimatedDate
+
+        });
+
+    }
+
+    const cache = orderId
+
+        ? getOrder(orderId)
+
+        : null;
+
+    if (
+
+        event === "delivered"
+
+        &&
+
+        orderId
+
+    ) {
+
+        deleteOrder(orderId);
+
+    }
+
     return {
 
         provider: "amazon",
@@ -196,6 +303,14 @@ export function parseAmazon(message) {
         event,
 
         orderId,
+
+        estimatedDate,
+
+        items: cache?.items ?? items,
+
+        hasItems: (cache?.items ?? items).length > 0,
+
+        trackingUrl,
 
         subject: message.subject,
 
@@ -208,4 +323,3 @@ export function parseAmazon(message) {
     };
 
 }
-

@@ -81,3 +81,18 @@ export function cleanupOrders() {
     }
 
 }
+
+/**
+ * キャッシュ一覧取得
+ *
+ * @returns {Array}
+ */
+export function getOrders() {
+
+    return Array.from(
+
+        orders.values()
+
+    );
+
+}

@@ -3,28 +3,19 @@
  * Discord Delivery Notifier
  * discord.js
  * =====================================================
- * Version : 3.0.0
- * Author  : Lucia
- * Development Support : OpenAI ChatGPT "Rinne"
- * =====================================================
  */
 
 "use strict";
 
-import { CONFIG } from "../config.js";
+export async function sendDiscordNotification(options) {
 
-/**
- * Discord通知
- *
- * @param {Object} notification
- */
-export async function sendDiscordNotification(notification) {
+    const webhook = process.env.DISCORD_WEBHOOK_URL;
 
-    if (!CONFIG.discord.webhookUrl) {
+    if (!webhook) {
 
         throw new Error(
 
-            "Discord Webhook URL is not configured."
+            "DISCORD_WEBHOOK_URL is not set."
 
         );
 
@@ -32,19 +23,19 @@ export async function sendDiscordNotification(notification) {
 
     const payload = {};
 
-    if (notification.message) {
+    if (options.message) {
 
-        payload.content = notification.message;
-
-    }
-
-    if (notification.embeds) {
-
-        payload.embeds = notification.embeds;
+        payload.content = options.message;
 
     }
 
-    console.log("========== Discord Payload ==========");
+    if (options.embeds) {
+
+        payload.embeds = options.embeds;
+
+    }
+
+    console.log("========== Payload ==========");
 
     console.log(
 
@@ -62,7 +53,7 @@ export async function sendDiscordNotification(notification) {
 
     const response = await fetch(
 
-        CONFIG.discord.webhookUrl,
+        webhook,
 
         {
 
@@ -86,9 +77,21 @@ export async function sendDiscordNotification(notification) {
 
     const body = await response.text();
 
-    console.log("Discord Status:", response.status);
+    console.log(
 
-    console.log("Discord Response:", body);
+        "Discord Status:",
+
+        response.status
+
+    );
+
+    console.log(
+
+        "Discord Response:",
+
+        body
+
+    );
 
     if (!response.ok) {
 
