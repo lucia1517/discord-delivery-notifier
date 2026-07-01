@@ -26,6 +26,12 @@ import {
 
 import {
 
+    sendLineNotification
+
+} from "./notifications/line.js";
+
+import {
+
     getLastMessageId,
 
     saveLastMessageId
@@ -252,11 +258,29 @@ export async function checkAmazonLatest() {
 
         });
 
+        await sendLineNotification({
+
+message: `${title}
+
+${parsed.subject}
+
+配送予定：${parsed.estimatedDate ?? "未定"}
+
+注文番号：${parsed.orderId ?? "不明"}
+
+https://www.amazon.co.jp/gp/css/order-history`
+
+        });
+
     }
 
-    await saveLastMessageId(
+   await saveLastMessageId(
 
-        messages[0].id
+        newMessages[
+
+        newMessages.length - 1
+
+        ].id
 
     );
 

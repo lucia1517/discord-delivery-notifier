@@ -1,0 +1,2 @@
+sendLineNotification(parsed);
+buildFlexMessage(parsed);

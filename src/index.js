@@ -7,6 +7,12 @@
 
 "use strict";
 
+import {
+
+    sendLineNotification
+
+} from "./notifications/line.js";
+
 import express from "express";
 import { CONFIG } from "./config.js";
 import * as logger from "./utils/logger.js";
@@ -310,6 +316,42 @@ app.get("/parser/amazon/latest", async (req, res) => {
             }
 
         );
+
+    }
+
+    catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+
+            success: false,
+
+            error: error.message
+
+        });
+
+    }
+
+});
+
+app.get("/test-line", async (req, res) => {
+
+    try {
+
+        await sendLineNotification({
+
+            message:
+
+                "📦 テスト通知\n\nLINE連携成功！"
+
+        });
+
+        res.json({
+
+            success: true
+
+        });
 
     }
 
