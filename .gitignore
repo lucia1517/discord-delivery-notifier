@@ -5,6 +5,7 @@ node_modules/
 .env
 credentials.json
 token.json
+latest.json
 
 # Logs
 npm-debug.log*
