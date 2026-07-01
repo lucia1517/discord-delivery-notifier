@@ -258,19 +258,21 @@ export async function checkAmazonLatest() {
 
         });
 
-        await sendLineNotification({
+       await sendLineNotification({
 
-message: `${title}
+            title,
 
-${parsed.subject}
+            event: parsed.event,
 
-配送予定：${parsed.estimatedDate ?? "未定"}
+            subject: parsed.subject,
 
-注文番号：${parsed.orderId ?? "不明"}
+            estimatedDate: parsed.estimatedDate,
 
-https://www.amazon.co.jp/gp/css/order-history`
+            orderId: parsed.orderId,
 
-        });
+            items: parsed.items
+
+        }); 
 
     }
 
