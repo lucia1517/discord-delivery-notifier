@@ -32,6 +32,20 @@ import {
 
 } from "./parser/amazon.js";
 
+import {
+
+    getLastMessageId,
+
+    saveLastMessageId
+
+} from "./cache/latest.js";
+
+import {
+
+    checkAmazonLatest
+
+} from "./amazon-checker.js";
+
 
 const app = express();
 
@@ -65,6 +79,19 @@ app.listen(
 
 );
 
+checkAmazonLatest().catch(
+
+    error => {
+
+        console.error(
+
+            error
+
+        );
+
+    }
+
+);
 
 
 app.get("/test", async (req, res) => {
@@ -123,15 +150,44 @@ app.get("/gmail/messages", async (req, res) => {
 
     try {
 
-        const messages = await listMessages(50);
+        const messages = await listMessages(5);
+
+        const lastMessageId = await getLastMessageId();
 
         const result = [];
 
+
         for (const mail of messages) {
+
+            if (
+
+                messages[0].id
+
+            ) {
+
+                continue;
+
+            }
+
+            if (
+
+                  messages[0].id
+
+            ) {
+
+                return res.json({
+
+                    success: true,
+
+                    message: "新しいメールはありません。"
+
+                });
+
+            }
 
             const gmailMessage = await getMessage(
 
-                mail.id
+                messages[0].id
 
             );
 
@@ -241,303 +297,68 @@ app.get("/parser/amazon/latest", async (req, res) => {
 
     try {
 
-        const messages = await listMessages(20);
+        const result = await checkAmazonLatest();
 
-        for (const mail of messages) {
+        res.json(
 
-            const gmailMessage = await getMessage(
+            result ?? {
 
-                mail.id
+                success: true,
 
-            );
-
-            const message = {
-
-                id: gmailMessage.id,
-
-                threadId: gmailMessage.threadId,
-
-                subject: getHeader(
-
-                    gmailMessage,
-
-                    "Subject"
-
-                ),
-
-                from: getHeader(
-
-                    gmailMessage,
-
-                    "From"
-
-                ),
-
-                date: getHeader(
-
-                    gmailMessage,
-
-                    "Date"
-
-                ),
-
-                body: getBody(
-
-                    gmailMessage
-
-                )
-
-            };
-
-            const parsed = parseAmazon(
-
-                message
-
-            );
-
-            if (!parsed) {
-
-                continue;
+                message: "新しいAmazonメールはありません。"
 
             }
 
-            let title = "📦 Amazon通知";
+        );
 
-            let color = 0xff9900;
+    }
 
-            switch (parsed.event) {
+    catch (error) {
 
-                case "shipped":
+        console.error(error);
 
-                    title = "📦 Amazon 発送通知";
-                    color = 0xffa500;
-                    break;
+        res.status(500).json({
 
-                case "delivered":
+            success: false,
 
-                    title = "📬 Amazon 配達完了";
-                    color = 0x2ecc71;
-                    break;
+            error: error.message
 
-                case "order_updated":
+        });
 
-                    title = "🛒 Amazon 注文更新";
-                    color = 0x3498db;
-                    break;
+    }
 
-                case "cancelled":
+});
 
-                    title = "❌ Amazon キャンセル";
-                    color = 0xe74c3c;
-                    break;
+/**
+ * =====================================================
+ * 1分ごとにAmazonメールチェック
+ * =====================================================
+ */
 
-            }
+setInterval(
 
-            const fields = [];
+    async () => {
 
-            if (parsed.hasItems) {
+        try {
 
-                fields.push({
+            await checkAmazonLatest();
 
-                    name: "📦 商品",
+        }
 
-                    value: parsed.items
+        catch (error) {
 
-                        .map(
+            console.error(
 
-                            item => `• ${item.name}`
+                "Scheduler Error:",
 
-                        )
-
-                        .join("\n"),
-
-                    inline: false
-
-                });
-
-            }
-
-            fields.push(
-
-                {
-
-                    name: "📋 注文番号",
-
-                    value: parsed.orderId ?? "不明",
-
-                    inline: true
-
-                },
-
-                {
-
-                    name: "📅 配送予定",
-
-                    value: parsed.estimatedDate ?? "未定",
-
-                    inline: true
-
-                },
-
-                {
-
-                    name: "📝 件名",
-
-                    value: parsed.subject,
-
-                    inline: false
-
-                }
-
-            );
-
-            fields.push({
-
-                name: "🔗 注文履歴",
-
-                value: "[Amazonの注文履歴を開く](https://www.amazon.co.jp/gp/css/order-history)",
-
-                inline: false
-
-            });
-
-            const embed = {
-
-                title,
-
-                color,
-
-                fields,
-
-                footer: {
-
-                    text: "Discord Delivery Notifier"
-
-                },
-
-                timestamp: new Date().toISOString()
-
-            };
-
-            await sendDiscordNotification({
-
-                embeds: [
-
-                    embed
-
-                ]
-
-            });
-
-            return res.json(
-
-                parsed
+                error.message
 
             );
 
         }
 
-        res.status(404).json({
+    },
 
-            success: false,
+    60 * 1000
 
-            error: "Amazonメールが見つかりません。"
-
-        });
-
-    }
-
-    catch (error) {
-
-        console.error(error);
-
-        res.status(500).json({
-
-            success: false,
-
-            error: error.message
-
-        });
-
-    }
-
-});
-
-app.get("/parser/amazon/:id", async (req, res) => {
-
-    try {
-
-        const gmailMessage = await getMessage(
-
-            req.params.id
-
-        );
-
-        const message = {
-
-            id: gmailMessage.id,
-
-            threadId: gmailMessage.threadId,
-
-            subject: getHeader(
-
-                gmailMessage,
-
-                "Subject"
-
-            ),
-
-            from: getHeader(
-
-                gmailMessage,
-
-                "From"
-
-            ),
-
-            date: getHeader(
-
-                gmailMessage,
-
-                "Date"
-
-            ),
-
-            body: getBody(
-
-                gmailMessage
-
-            )
-
-        };
-
-        const parsed = parseAmazon(
-
-            message
-
-        );
-
-        res.json(
-
-            parsed
-
-        );
-
-    }
-
-    catch (error) {
-
-        console.error(error);
-
-        res.status(500).json({
-
-            success: false,
-
-            error: error.message
-
-        });
-
-    }
-
-});
-
+);
